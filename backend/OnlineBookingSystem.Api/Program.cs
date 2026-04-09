@@ -169,35 +169,49 @@ if (app.Environment.IsProduction())
   }
 }
 
-// Migrations: apply on empty DBs. Script-built databases already have tables (e.g. Advertisement) — Migrate() would throw 2714; skip and only ensure provisioning table.
+// EF Core migrations: Development only. Production/staging use SQL-scripted schema; Migrate() there causes "object already exists" and startup failures.
 using (var scope = app.Services.CreateScope())
 {
   var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
   var startupLog = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Database");
   try
   {
-    var pending = db.Database.GetPendingMigrations().ToList();
-    if (pending.Count > 0)
+    if (app.Environment.IsDevelopment())
     {
-      startupLog.LogInformation("Applying {Count} pending EF Core migration(s)…", pending.Count);
-      try
+      var pending = db.Database.GetPendingMigrations().ToList();
+      if (pending.Count > 0)
       {
-        db.Database.Migrate();
-        startupLog.LogInformation("EF Core migrations applied.");
+        startupLog.LogInformation("Applying {Count} pending EF Core migration(s)…", pending.Count);
+        try
+        {
+          db.Database.Migrate();
+          startupLog.LogInformation("EF Core migrations applied.");
+        }
+        catch (Exception ex) when (IsSqlDuplicateObjectError(ex))
+        {
+          startupLog.LogWarning(ex,
+            "EF migrations were not applied: objects already exist (typical for databases created from SQL scripts). Using existing schema. For an empty new database run: dotnet ef database update --project backend/OnlineBookingSystem.Api");
+        }
       }
-      catch (Exception ex) when (IsSqlDuplicateObjectError(ex))
+      else
       {
-        startupLog.LogWarning(ex,
-          "EF migrations were not applied: objects already exist (typical for databases created from SQL scripts). Using existing schema. For an empty new database run: dotnet ef database update --project backend/OnlineBookingSystem.Api");
+        startupLog.LogInformation("No pending EF Core migrations.");
       }
     }
     else
     {
-      startupLog.LogInformation("No pending EF Core migrations.");
+      startupLog.LogInformation("Skipping EF Core Migrate(); not Development — using existing database schema.");
     }
 
     ProvisioningSchemaGuard.EnsureSuperAdminProvisioningToken(db);
     startupLog.LogInformation("SuperAdminProvisioningToken table verified.");
+
+    // Script-built DBs often predate email/password registration; add missing columns + filtered unique index on Email.
+    RegisteredUserSchemaGuard.EnsureAccountColumns(db);
+    startupLog.LogInformation("RegisteredUser account columns verified (Email, PasswordHash, …).");
+
+    VenueMasterWriteGuard.EnsureSqlServerVenueWritesWork(db, startupLog);
+    startupLog.LogInformation("VenueMaster / VenueType write prerequisites verified.");
   }
   catch (Exception ex)
   {
