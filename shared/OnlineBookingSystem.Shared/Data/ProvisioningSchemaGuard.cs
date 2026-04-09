@@ -7,6 +7,12 @@ public static class ProvisioningSchemaGuard
 {
 	public static void EnsureSuperAdminProvisioningToken(AppDbContext db)
 	{
+		// Schema is created by EF migrations in the API project when using SQLite.
+		if (db.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			return;
+		}
+
 		db.Database.ExecuteSqlRaw(Sql);
 	}
 

@@ -2550,9 +2550,14 @@ public class BookingSystemRepository : IBookingSystemRepository
 		return null;
 	}
 
-	/// <summary>Calls <c>SELECT dbo.fn_GenerateBookingRegNo(@VenueCode, @BookingID)</c> (requires row inserted so <c>BookingID</c> exists).</summary>
+	/// <summary>Calls <c>dbo.fn_GenerateBookingRegNo</c> on SQL Server, or applies the same formatting for SQLite (see <c>database/fn_GenerateBookingRegNo.sql</c>).</summary>
 	private async Task<string> ComputeFnBookingRegNoAsync(string venueCodeNvarchar10, int bookingId, SqlTransaction? ambientTransaction, CancellationToken ct)
 	{
+		if (_db.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			return FormatBookingRegNoLikeSqlFn(venueCodeNvarchar10, bookingId);
+		}
+
 		DbConnection conn = _db.Database.GetDbConnection();
 		var wasOpen = conn.State == ConnectionState.Open;
 		if (!wasOpen)
@@ -2563,7 +2568,7 @@ public class BookingSystemRepository : IBookingSystemRepository
 		{
 			if (conn is not SqlConnection sqlConn)
 			{
-				throw new InvalidOperationException("SQL Server is required for booking registration numbers.");
+				throw new InvalidOperationException("SQL Server is required for booking registration numbers (or use SQLite).");
 			}
 			await using var cmd = sqlConn.CreateCommand();
 			cmd.Transaction = ambientTransaction;
@@ -2590,6 +2595,22 @@ public class BookingSystemRepository : IBookingSystemRepository
 				await _db.Database.CloseConnectionAsync();
 			}
 		}
+	}
+
+	/// <summary>Matches <c>UPPER(@VenueCode) + '-' + YEAR(GETDATE()) + RIGHT('0000' + CAST(@BookingID AS NVARCHAR(20)), 4)</c>.</summary>
+	private static string FormatBookingRegNoLikeSqlFn(string venueCodeNvarchar10, int bookingId)
+	{
+		string y = DateTime.UtcNow.Year.ToString(CultureInfo.InvariantCulture);
+		string idStr = bookingId.ToString(CultureInfo.InvariantCulture);
+		string padded = "0000" + idStr;
+		string suffix = padded.Length > 4 ? padded.Substring(padded.Length - 4) : padded.PadLeft(4, '0');
+		string code = (venueCodeNvarchar10 ?? "").Trim().ToUpperInvariant();
+		if (code.Length > 10)
+		{
+			code = code.Substring(0, 10);
+		}
+		string no = code + "-" + y + suffix;
+		return no.Length <= 30 ? no : no.Substring(0, 30);
 	}
 
 	private static OfficeUserVm MapOfficeUser(OfficeUserEntity a, IReadOnlyList<int> venueIds, string? roleName)

@@ -51,12 +51,11 @@ IConfigurationRoot cfg = new ConfigurationBuilder()
 string? cs = cfg.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(cs))
 {
-	Console.Error.WriteLine("Missing connection string. Set DefaultConnection in appsettings or ConnectionStrings__DefaultConnection.");
-	return 2;
+	cs = $"Data Source={Path.Combine(apiConfigDir, "app.db")}";
 }
 
 DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
-	.UseSqlServer(cs)
+	.UseSqlite(cs)
 	.Options;
 
 await using AppDbContext db = new AppDbContext(options);

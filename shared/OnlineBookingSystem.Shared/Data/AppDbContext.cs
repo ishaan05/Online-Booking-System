@@ -111,8 +111,7 @@ public class AppDbContext : DbContext
 			e.HasKey((Expression<Func<RegisteredUserEntity, object>>)((RegisteredUserEntity x) => x.UserID));
 			e.Property((Expression<Func<RegisteredUserEntity, int>>)((RegisteredUserEntity x) => x.UserID)).ValueGeneratedOnAdd();
 			e.HasIndex((Expression<Func<RegisteredUserEntity, object>>)((RegisteredUserEntity x) => x.MobileNumber)).IsUnique(true);
-			RelationalIndexBuilderExtensions.HasFilter<RegisteredUserEntity>(e.HasIndex((Expression<Func<RegisteredUserEntity, object>>)((RegisteredUserEntity x) => x.Email)).IsUnique(true), "[Email] IS NOT NULL");
-			RelationalPropertyBuilderExtensions.HasColumnType<string>(e.Property<string>((Expression<Func<RegisteredUserEntity, string>>)((RegisteredUserEntity x) => x.PasswordHash)), "nvarchar(max)");
+			RelationalIndexBuilderExtensions.HasFilter<RegisteredUserEntity>(e.HasIndex((Expression<Func<RegisteredUserEntity, object>>)((RegisteredUserEntity x) => x.Email)).IsUnique(true), "Email IS NOT NULL");
 		});
 		modelBuilder.Entity<OtpLogEntity>((Action<EntityTypeBuilder<OtpLogEntity>>)delegate(EntityTypeBuilder<OtpLogEntity> e)
 		{
@@ -132,8 +131,8 @@ public class AppDbContext : DbContext
 				.OnDelete((DeleteBehavior)1);
 			e.HasOne<BookingPurposeEntity>((Expression<Func<BookingRequestEntity, BookingPurposeEntity>>)null).WithMany((string)null).HasForeignKey((Expression<Func<BookingRequestEntity, object>>)((BookingRequestEntity x) => x.PurposeID))
 				.OnDelete((DeleteBehavior)1);
-			RelationalPropertyBuilderExtensions.HasComputedColumnSql<int>(e.Property<int>((Expression<Func<BookingRequestEntity, int>>)((BookingRequestEntity x) => x.TotalDays)), "DATEDIFF(DAY, [BookingFromDate], [BookingToDate]) + 1", (bool?)true);
-			RelationalPropertyBuilderExtensions.HasComputedColumnSql<decimal>(e.Property<decimal>((Expression<Func<BookingRequestEntity, decimal>>)((BookingRequestEntity x) => x.TotalAmount)), "[RentAmount] + [SecurityDeposit]", (bool?)true);
+			RelationalPropertyBuilderExtensions.HasComputedColumnSql<int>(e.Property<int>((Expression<Func<BookingRequestEntity, int>>)((BookingRequestEntity x) => x.TotalDays)), "CAST((julianday(\"BookingToDate\") - julianday(\"BookingFromDate\")) AS INTEGER) + 1", (bool?)true);
+			RelationalPropertyBuilderExtensions.HasComputedColumnSql<decimal>(e.Property<decimal>((Expression<Func<BookingRequestEntity, decimal>>)((BookingRequestEntity x) => x.TotalAmount)), "\"RentAmount\" + \"SecurityDeposit\"", (bool?)true);
 		});
 		modelBuilder.Entity<BookingStatusLogEntity>((Action<EntityTypeBuilder<BookingStatusLogEntity>>)delegate(EntityTypeBuilder<BookingStatusLogEntity> e)
 		{
@@ -243,8 +242,6 @@ public class AppDbContext : DbContext
 			RelationalEntityTypeBuilderExtensions.ToTable<SuperAdminProvisioningTokenEntity>(e, "SuperAdminProvisioningToken");
 			e.HasKey((Expression<Func<SuperAdminProvisioningTokenEntity, object>>)((SuperAdminProvisioningTokenEntity x) => x.TokenId));
 			e.HasIndex((Expression<Func<SuperAdminProvisioningTokenEntity, object>>)((SuperAdminProvisioningTokenEntity x) => x.TokenHash)).IsUnique(true);
-			RelationalPropertyBuilderExtensions.HasColumnType<byte[]>(e.Property<byte[]>((Expression<Func<SuperAdminProvisioningTokenEntity, byte[]>>)((SuperAdminProvisioningTokenEntity x) => x.TokenHash)), "varbinary(32)");
-			RelationalPropertyBuilderExtensions.HasColumnType<byte[]>(e.Property<byte[]?>((Expression<Func<SuperAdminProvisioningTokenEntity, byte[]?>>)((SuperAdminProvisioningTokenEntity x) => x.BoundIpFingerprint)), "varbinary(32)");
 		});
 	}
 }

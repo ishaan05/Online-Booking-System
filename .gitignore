@@ -17,6 +17,11 @@ frontend/npm-debug.log
 **/appsettings.Development.json
 .env
 
+# Local SQLite (API working directory)
+**/app.db
+**/app.db-shm
+**/app.db-wal
+
 # OS
 .DS_Store
 Thumbs.db
