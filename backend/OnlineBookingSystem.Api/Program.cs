@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using OnlineBookingSystem.Api.Configuration;
 using OnlineBookingSystem.Api.Security;
 using OnlineBookingSystem.Shared.Configuration;
@@ -35,6 +36,43 @@ builder.Services.AddControllers()
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 
+// ✅ Swagger (ADDED)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+  options.SwaggerDoc("v1", new OpenApiInfo
+  {
+    Title = "Online Booking API",
+    Version = "v1"
+  });
+
+  // Optional: JWT support in Swagger
+  options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+  {
+    Name = "Authorization",
+    Type = SecuritySchemeType.Http,
+    Scheme = "bearer",
+    BearerFormat = "JWT",
+    In = ParameterLocation.Header,
+    Description = "Enter 'Bearer YOUR_TOKEN'"
+  });
+
+  options.AddSecurityRequirement(new OpenApiSecurityRequirement
+  {
+    {
+      new OpenApiSecurityScheme
+      {
+        Reference = new OpenApiReference
+        {
+          Type = ReferenceType.SecurityScheme,
+          Id = "Bearer"
+        }
+      },
+      new string[] {}
+    }
+  });
+});
+
 // ✅ JWT
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Configure Jwt:Key in appsettings.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -57,7 +95,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
       };
     });
 
-// ✅ DATABASE (your existing SQL Server)
+// ✅ DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -79,7 +117,7 @@ builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<OfficeAuthService>();
 
-// ✅ SIMPLE CORS (IMPORTANT FOR HOSTING)
+// ✅ CORS
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowAll",
@@ -90,13 +128,22 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ✅ USE MIDDLEWARES
+// ✅ Middleware
 app.UseForwardedHeaders();
 app.UseCors("AllowAll");
 
+// ⚠️ Keep this BEFORE auth if needed
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+
+// ✅ Swagger (ADDED — IMPORTANT)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+  c.SwaggerEndpoint("/swagger/v1/swagger.json", "Online Booking API V1");
+  c.RoutePrefix = "swagger"; // keeps /swagger URL
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
