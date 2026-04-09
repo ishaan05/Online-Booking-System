@@ -46,6 +46,17 @@ export interface RateChartRecord {
 export interface CategoryRecord {
   id: string;
   categoryType: string;
+  identityLabel: string;
+  identityFormat: string;
+  documentLabel: string;
+  isActive: boolean;
+}
+
+export interface PurposeRecord {
+  id: string;
+  purposeName: string;
+  maxDays: number;
+  isActive: boolean;
 }
 
 export interface AccountDetailsRecord {
@@ -60,8 +71,16 @@ export interface AccountDetailsRecord {
   chequeInFavour: string;
 }
 
+export interface VenueTypeRecord {
+  id: string;
+  typeName: string;
+  isActive: boolean;
+}
+
 export interface HallDescriptionRecord {
   id: string;
+  /** VenueType row id for API upsert */
+  venueTypeId: number;
   shortCode: string;
   name: string;
   /** From VenueMaster; used for office employee venue labels. */
@@ -143,8 +162,10 @@ export class AdminDataService {
   private readonly officeUserRoles$ = new BehaviorSubject<OfficeUserRoleRecord[]>([]);
   private readonly rateCharts$ = new BehaviorSubject<RateChartRecord[]>([]);
   private readonly categories$ = new BehaviorSubject<CategoryRecord[]>([]);
+  private readonly purposesRows$ = new BehaviorSubject<PurposeRecord[]>([]);
   private readonly accounts$ = new BehaviorSubject<AccountDetailsRecord[]>([]);
   private readonly halls$ = new BehaviorSubject<HallDescriptionRecord[]>([]);
+  private readonly venueTypes$ = new BehaviorSubject<VenueTypeRecord[]>([]);
   private readonly textAds$ = new BehaviorSubject<TextAdvertiseRecord[]>([]);
   private readonly imageAds$ = new BehaviorSubject<ImageAdvertiseRecord[]>([]);
   private readonly imageBanners$ = new BehaviorSubject<ImageBannerRecord[]>([]);
@@ -174,8 +195,12 @@ export class AdminDataService {
   readonly officeUserRoles = this.officeUserRoles$.asObservable();
   readonly rateCharts = this.rateCharts$.asObservable();
   readonly categories = this.categories$.asObservable();
+  /** All booking purposes (admin grid); distinct from internal `purposesCache` used for rate rules. */
+  readonly purposesRows = this.purposesRows$.asObservable();
   readonly accounts = this.accounts$.asObservable();
   readonly halls = this.halls$.asObservable();
+  /** All venue types (Super Admin API); empty for other roles if 403. */
+  readonly venueTypes = this.venueTypes$.asObservable();
   readonly textAds = this.textAds$.asObservable();
   readonly imageAds = this.imageAds$.asObservable();
   readonly imageBanners = this.imageBanners$.asObservable();
@@ -226,6 +251,10 @@ export class AdminDataService {
         this.http.get<BookingRecordDto[]>(`${this.base}/api/admin/bookings/grid`, h),
       ),
       venues: swallow('venues', this.http.get<VenueAdminDto[]>(`${this.base}/api/venues/admin/all`, h)),
+      venueTypesApi: swallow(
+        'venue types',
+        this.http.get<VenueTypeAdminDto[]>(`${this.base}/api/venuetypes/admin/all`, h),
+      ),
       categories: swallow(
         'categories',
         this.http.get<CategoryDto[]>(`${this.base}/api/bookingcategories/all`, h),
@@ -264,10 +293,37 @@ export class AdminDataService {
             : `Could not load: ${failed.join(', ')}.`;
         console.warn('[AdminDataService]', hint);
       }
-      this.purposesCache = r.purposes.map((p) => ({ purposeID: p.purposeID, purposeName: p.purposeName }));
+      this.purposesCache = r.purposes.map((p) => ({
+        purposeID: p.purposeID,
+        purposeName: p.purposeName ?? '',
+      }));
       this.bookings$.next(r.bookings.map(mapBooking));
       this.halls$.next(r.venues.map((v) => mapVenue(v)));
-      this.categories$.next(r.categories.map((c) => ({ id: String(c.categoryID), categoryType: c.categoryName })));
+      this.venueTypes$.next(
+        (r.venueTypesApi as VenueTypeAdminDto[]).map((t) => ({
+          id: String(t.venueTypeID),
+          typeName: t.typeName ?? '',
+          isActive: !!t.isActive,
+        })),
+      );
+      this.categories$.next(
+        r.categories.map((c) => ({
+          id: String(c.categoryID),
+          categoryType: c.categoryName ?? '',
+          identityLabel: c.identityLabel ?? '',
+          identityFormat: c.identityFormat ?? '',
+          documentLabel: c.documentLabel ?? '',
+          isActive: c.isActive !== false,
+        })),
+      );
+      this.purposesRows$.next(
+        r.purposes.map((p) => ({
+          id: String(p.purposeID),
+          purposeName: p.purposeName ?? '',
+          maxDays: typeof p.maxDays === 'number' && p.maxDays > 0 ? p.maxDays : 1,
+          isActive: p.isActive !== false,
+        })),
+      );
       this.rateCharts$.next(r.rates.map(mapRate));
       const imgRows: ImageAdvertiseRecord[] = [];
       for (const a of r.ads) {
@@ -356,12 +412,20 @@ export class AdminDataService {
     return this.categories$.value;
   }
 
+  getPurposes(): PurposeRecord[] {
+    return this.purposesRows$.value;
+  }
+
   getAccounts(): AccountDetailsRecord[] {
     return this.accounts$.value;
   }
 
   getHalls(): HallDescriptionRecord[] {
     return this.halls$.value;
+  }
+
+  getVenueTypes(): VenueTypeRecord[] {
+    return this.venueTypes$.value;
   }
 
   getTextAds(): TextAdvertiseRecord[] {
@@ -536,11 +600,11 @@ export class AdminDataService {
   upsertCategory(record: Omit<CategoryRecord, 'id'> & { id?: string }): void {
     const body = {
       categoryID: record.id && /^\d+$/.test(record.id) ? Number(record.id) : undefined,
-      categoryName: record.categoryType,
-      identityLabel: 'ID',
-      identityFormat: 'As per policy',
-      documentLabel: 'Supporting document',
-      isActive: true,
+      categoryName: record.categoryType.trim(),
+      identityLabel: (record.identityLabel ?? '').trim() || 'ID',
+      identityFormat: (record.identityFormat ?? '').trim() || 'As per policy',
+      documentLabel: (record.documentLabel ?? '').trim() || 'Supporting document',
+      isActive: record.isActive,
     };
     this.reloadOnSuccess(
       this.http.post(`${this.base}/api/bookingcategories`, body, { headers: this.hdr() }),
@@ -548,10 +612,32 @@ export class AdminDataService {
     );
   }
 
+  upsertPurpose(record: Omit<PurposeRecord, 'id'> & { id?: string }): void {
+    const body = {
+      purposeID: record.id && /^\d+$/.test(record.id) ? Number(record.id) : undefined,
+      purposeName: record.purposeName.trim(),
+      maxDays: record.maxDays,
+      isActive: record.isActive,
+    };
+    this.reloadOnSuccess(
+      this.http.post(`${this.base}/api/bookingpurposes`, body, { headers: this.hdr() }),
+      'Could not save booking purpose.',
+    );
+  }
+
   deleteCategory(id: string): void {
     this.reloadOnSuccess(
       this.http.delete(`${this.base}/api/bookingcategories/${id}`, { headers: this.hdr() }),
       'Could not delete category.',
+      undefined,
+      'Deleted successfully.',
+    );
+  }
+
+  deletePurpose(id: string): void {
+    this.reloadOnSuccess(
+      this.http.delete(`${this.base}/api/bookingpurposes/${id}`, { headers: this.hdr() }),
+      'Could not delete booking purpose.',
       undefined,
       'Deleted successfully.',
     );
@@ -576,21 +662,41 @@ export class AdminDataService {
 
   upsertHall(record: Omit<HallDescriptionRecord, 'id'> & { id?: string }): void {
     const fac = buildFacilitiesJson(record);
+    const codeRaw = record.shortCode || record.name.slice(0, 6).toUpperCase().replace(/\s/g, '');
     const body = {
       venueID: record.id && /^\d+$/.test(record.id) ? Number(record.id) : undefined,
-      venueTypeID: 1,
+      venueTypeID: record.venueTypeId > 0 ? record.venueTypeId : 1,
       venueName: record.name,
-      venueCode: record.shortCode || record.name.slice(0, 6).toUpperCase().replace(/\s/g, ''),
+      /** DB column VenueCode is nvarchar(10) */
+      venueCode: codeRaw.slice(0, 10),
       address: record.address || 'Nagpur',
       city: (record.city ?? '').trim() || 'Nagpur',
       division: 'Nagpur',
       googleMapLink: record.gpsLocation || null,
       facilities: fac,
       isActive: record.status !== 'Inactive',
+      capacity: parseOptionalInt(record.capacity),
+      areaSqMt: parseOptionalDecimal(record.areaSqmt),
+      noOfRooms: parseOptionalInt(record.rooms),
+      noOfKitchen: parseOptionalInt(record.kitchen),
+      noOfToilet: parseOptionalInt(record.toilet),
+      noOfBathroom: parseOptionalInt(record.bathroom),
     };
     this.reloadOnSuccess(
       this.http.post(`${this.base}/api/venues`, body, { headers: this.hdr() }),
       'Could not save venue.',
+    );
+  }
+
+  upsertVenueType(record: Omit<VenueTypeRecord, 'id'> & { id?: string }): void {
+    const body = {
+      venueTypeID: record.id && /^\d+$/.test(record.id) ? Number(record.id) : undefined,
+      typeName: record.typeName.trim(),
+      isActive: record.isActive,
+    };
+    this.reloadOnSuccess(
+      this.http.post(`${this.base}/api/venuetypes/admin`, body, { headers: this.hdr() }),
+      'Could not save venue type.',
     );
   }
 
@@ -926,6 +1032,12 @@ export interface BookingStatusLogEntryDto {
   changedAtIso: string;
 }
 
+interface VenueTypeAdminDto {
+  venueTypeID: number;
+  typeName: string;
+  isActive: boolean;
+}
+
 interface VenueAdminDto {
   venueID: number;
   venueTypeID: number;
@@ -938,16 +1050,28 @@ interface VenueAdminDto {
   facilities: string | null;
   isActive: boolean;
   createdAt: string;
+  capacity?: number | null;
+  areaSqMt?: number | null;
+  noOfRooms?: number | null;
+  noOfKitchen?: number | null;
+  noOfToilet?: number | null;
+  noOfBathroom?: number | null;
 }
 
 interface CategoryDto {
   categoryID: number;
   categoryName: string;
+  identityLabel?: string;
+  identityFormat?: string;
+  documentLabel?: string;
+  isActive?: boolean;
 }
 
 interface PurposeDto {
   purposeID: number;
   purposeName: string;
+  maxDays?: number;
+  isActive?: boolean;
 }
 
 interface RateChartDto {
@@ -1066,21 +1190,49 @@ function mapVenue(v: VenueAdminDto): HallDescriptionRecord {
   const extra = parseFacilities(v.facilities);
   return {
     id: String(v.venueID),
+    venueTypeId: v.venueTypeID,
     shortCode: v.venueCode,
     name: v.venueName,
     city: (v.city ?? '').trim(),
     gpsLocation: v.googleMapLink ?? '',
-    capacity: extra['capacity'] ?? '',
+    capacity: numOrFacilitiesString(v.capacity, extra, 'capacity'),
     address: v.address,
-    areaSqmt: extra['areaSqmt'] ?? '',
-    rooms: extra['rooms'] ?? '',
-    kitchen: extra['kitchen'] ?? '',
-    toilet: extra['toilet'] ?? '',
-    bathroom: extra['bathroom'] ?? '',
+    areaSqmt: numOrFacilitiesString(v.areaSqMt, extra, 'areaSqmt'),
+    rooms: numOrFacilitiesString(v.noOfRooms, extra, 'rooms'),
+    kitchen: numOrFacilitiesString(v.noOfKitchen, extra, 'kitchen'),
+    toilet: numOrFacilitiesString(v.noOfToilet, extra, 'toilet'),
+    bathroom: numOrFacilitiesString(v.noOfBathroom, extra, 'bathroom'),
     facilities: v.facilities ?? '',
     photoDataUrl: '',
     status: v.isActive ? 'Active' : 'Inactive',
   };
+}
+
+function numOrFacilitiesString(
+  col: number | null | undefined,
+  extra: Record<string, string>,
+  key: string,
+): string {
+  if (col != null && !Number.isNaN(Number(col))) {
+    return String(col);
+  }
+  return extra[key] ?? '';
+}
+
+function parseOptionalInt(s: string | undefined): number | null {
+  if (s == null || !String(s).trim()) {
+    return null;
+  }
+  const n = parseInt(String(s).trim(), 10);
+  return Number.isFinite(n) && !Number.isNaN(n) ? n : null;
+}
+
+function parseOptionalDecimal(s: string | undefined): number | null {
+  if (s == null || !String(s).trim()) {
+    return null;
+  }
+  const n = parseFloat(String(s).trim());
+  return Number.isFinite(n) && !Number.isNaN(n) ? n : null;
 }
 
 function parseFacilities(json: string | null): Record<string, string> {
@@ -1101,7 +1253,7 @@ function parseFacilities(json: string | null): Record<string, string> {
   }
 }
 
-function buildFacilitiesJson(r: Omit<HallDescriptionRecord, 'id'>): string {
+function buildFacilitiesJson(r: Omit<HallDescriptionRecord, 'id' | 'venueTypeId'>): string {
   const o: Record<string, string> = {};
   if (r.capacity) {
     o['capacity'] = r.capacity;

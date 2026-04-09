@@ -12,7 +12,7 @@ using OnlineBookingSystem.Shared.Data;
 namespace OnlineBookingSystem.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260409115007_InitialSqlServer")]
+    [Migration("20260409181208_InitialSqlServer")]
     partial class InitialSqlServer
     {
         /// <inheritdoc />

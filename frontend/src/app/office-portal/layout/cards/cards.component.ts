@@ -143,7 +143,7 @@ export class CardsComponent implements OnInit, OnDestroy {
 
   openCard(card: DashboardCard): void {
     if (card.id === 'venues') {
-      void this.router.navigateByUrl('/admin/dashboard/master/venues');
+      void this.router.navigateByUrl('/admin/dashboard/master/venue');
       return;
     }
     if (card.id === 'total') {

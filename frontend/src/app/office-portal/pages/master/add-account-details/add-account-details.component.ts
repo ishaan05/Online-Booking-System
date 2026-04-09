@@ -9,7 +9,7 @@ import { AdminDataService, AccountDetailsRecord } from '../../../core/admin-data
   styleUrls: ['./add-account-details.component.css', '../../../shared/admin-forms.css'],
 })
 export class AddAccountDetailsComponent implements OnInit, OnDestroy {
-  listMode = false;
+  listMode = true;
   rows: AccountDetailsRecord[] = [];
   hallOptions: string[] = [];
   editingId: string | null = null;
@@ -38,6 +38,7 @@ export class AddAccountDetailsComponent implements OnInit, OnDestroy {
     this.sub.add(this.data.halls.subscribe(() => this.refreshHalls()));
     this.qpSub = this.route.queryParamMap.subscribe((q) => {
       const edit = q.get('edit');
+      const add = q.get('add');
       if (edit) {
         this.listMode = false;
         const row = this.data.getAccounts().find((x) => x.id === edit);
@@ -52,7 +53,11 @@ export class AddAccountDetailsComponent implements OnInit, OnDestroy {
           this.mobile = row.mobile;
           this.chequeInFavour = row.chequeInFavour;
         }
+      } else if (add === '1') {
+        this.listMode = false;
+        this.resetForm();
       } else {
+        this.listMode = true;
         this.editingId = null;
       }
     });
@@ -72,10 +77,8 @@ export class AddAccountDetailsComponent implements OnInit, OnDestroy {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
-  backToForm(): void {
-    this.listMode = false;
-    this.resetForm();
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  goAdd(): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { add: '1' } });
   }
 
   resetForm(): void {

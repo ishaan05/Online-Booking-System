@@ -14,7 +14,7 @@ import {
   styleUrls: ['../../../shared/admin-forms.css', './add-employee.component.css'],
 })
 export class AddEmployeeComponent implements OnInit, OnDestroy {
-  listMode = false;
+  listMode = true;
   rows: AdminRoleRecord[] = [];
   editingId: string | null = null;
 
@@ -51,6 +51,7 @@ export class AddEmployeeComponent implements OnInit, OnDestroy {
     this.rolesSub = this.data.officeUserRoles.subscribe((r) => (this.officeRoles = r));
     this.qpSub = this.route.queryParamMap.subscribe((q) => {
       const edit = q.get('edit');
+      const add = q.get('add');
       if (edit) {
         this.listMode = false;
         const row = this.data.getAdmins().find((x) => x.id === edit);
@@ -63,7 +64,11 @@ export class AddEmployeeComponent implements OnInit, OnDestroy {
           this.venueIds = [...(row.venueIds ?? [])];
           this.password = row.password;
         }
+      } else if (add === '1') {
+        this.listMode = false;
+        this.resetForm();
       } else {
+        this.listMode = true;
         this.editingId = null;
       }
     });
@@ -130,10 +135,8 @@ export class AddEmployeeComponent implements OnInit, OnDestroy {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
-  backToForm(): void {
-    this.listMode = false;
-    this.resetForm();
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  goAdd(): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { add: '1' } });
   }
 
   resetForm(): void {

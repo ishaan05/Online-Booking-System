@@ -14,6 +14,7 @@ import { AddRateChartComponent } from './pages/master/add-rate-chart/add-rate-ch
 import { AddCategoryComponent } from './pages/master/add-category/add-category.component';
 import { AddAccountDetailsComponent } from './pages/master/add-account-details/add-account-details.component';
 import { AddHallDescriptionComponent } from './pages/master/add-hall-description/add-hall-description.component';
+import { AddVenueTypeComponent } from './pages/master/add-venue-type/add-venue-type.component';
 import { AddTextAdvertiseComponent } from './pages/master/add-text-advertise/add-text-advertise.component';
 import { AddImageAdvertiseComponent } from './pages/master/add-image-advertise/add-image-advertise.component';
 import { AddImageBannerComponent } from './pages/master/add-image-banner/add-image-banner.component';
@@ -26,7 +27,6 @@ import { CancelledBookingsComponent } from './pages/admin-actions/cancelled-book
 import { AdminBookingsComponent } from './pages/admin-actions/admin-bookings/admin-bookings.component';
 import { ChangePasswordComponent } from './pages/admin-actions/change-password/change-password.component';
 import { TotalBookingsComponent } from './pages/admin-actions/total-bookings/total-bookings.component';
-import { VenuesListComponent } from './pages/master/venues-list/venues-list.component';
 import { CancelBookingComponent } from './pages/admin-actions/cancel-booking/cancel-booking.component';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
@@ -48,6 +48,7 @@ import { LuDeferredSkeletonDirective } from '../core/loading-ux/lu-deferred-skel
     AddCategoryComponent,
     AddAccountDetailsComponent,
     AddHallDescriptionComponent,
+    AddVenueTypeComponent,
     AddTextAdvertiseComponent,
     AddImageAdvertiseComponent,
     AddImageBannerComponent,
@@ -60,7 +61,6 @@ import { LuDeferredSkeletonDirective } from '../core/loading-ux/lu-deferred-skel
     AdminBookingsComponent,
     ChangePasswordComponent,
     TotalBookingsComponent,
-    VenuesListComponent,
     CancelBookingComponent,
     AdminDateFieldComponent,
   ],

@@ -1,0 +1,19 @@
+.admin-form__label--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-form__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.admin-data-card__meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+}

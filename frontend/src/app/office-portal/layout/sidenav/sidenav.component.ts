@@ -36,12 +36,12 @@ export class SidenavComponent implements OnInit, OnDestroy {
   private sub?: Subscription;
 
   readonly masterLinks: MasterNavLink[] = [
-    { path: '/admin/dashboard/master/venues', label: 'Modify Venues' },
+    { path: '/admin/dashboard/master/add-venue-type', label: 'Add/Modify Venue Type' },
+    { path: '/admin/dashboard/master/venue', label: 'Add/Modify Venue' },
     { path: '/admin/dashboard/master/add-employee', label: 'Add/Modify Role' },
     { path: '/admin/dashboard/master/add-rate-chart', label: 'Add/Modify Rates & Capacity' },
-    { path: '/admin/dashboard/master/add-category', label: 'Add/Modify Catagories' },
+    { path: '/admin/dashboard/master/add-category', label: 'Add/Modify Category & Purpose' },
     { path: '/admin/dashboard/master/add-account-details', label: 'Add/Modify Bank Details' },
-    { path: '/admin/dashboard/master/add-hall-description', label: 'Add/Modify Hall Description' },
     { path: '/admin/dashboard/master/add-text-advertise', label: 'Add/Modify Text Advertisement' },
     { path: '/admin/dashboard/master/add-image-advertise', label: 'Add/Modify Image Advertisement' },
     { path: '/admin/dashboard/master/add-image-banner', label: 'Add Dashboard Banner' },
@@ -123,7 +123,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
     if (this.auth.isSuperAdmin()) {
       return this.masterLinks;
     }
-    return this.masterLinks.filter((l) => l.path.includes('/master/venues'));
+    return this.masterLinks.filter((l) => l.path === '/admin/dashboard/master/venue');
   }
 
   get visibleAdminLinks(): AdminNavLink[] {

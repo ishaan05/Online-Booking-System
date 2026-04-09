@@ -1,38 +1,126 @@
 <div class="admin-page admin-page--wide admin-page--premium-form">
-  <div *ngIf="!listMode" class="admin-card admin-form-page-card">
+  <div *ngIf="!listMode && formKind === 'category'" class="admin-card admin-form-page-card">
     <div class="admin-card__header admin-form-page-card__head">
       <div class="admin-form-page-card__head-inner">
-        <h1 class="admin-form-page-card__title">Add/Modify Catagories</h1>
-        <p class="admin-form-page-card__subtitle">Create or update a category type used for hall bookings.</p>
+        <h1 class="admin-form-page-card__title">Add/Modify Category &amp; Purpose</h1>
+        <p class="admin-form-page-card__subtitle">Booking category: name, identity and document labels, and whether it is active.</p>
       </div>
     </div>
     <div class="admin-card__body admin-form-page-card__body">
       <section class="admin-form-page-panel">
         <div class="admin-form-page-panel__stack">
           <div class="admin-form__row admin-form__row--full">
-            <label class="admin-form__label" for="cat-type">Category type</label>
+            <label class="admin-form__label" for="cat-name">Booking category</label>
             <input
-              id="cat-type"
+              id="cat-name"
               class="admin-form__input admin-form-page__control"
               [(ngModel)]="categoryType"
-              placeholder="Enter category type"
+              placeholder="Enter booking category"
             />
+          </div>
+          <div class="admin-form__row admin-form__row--full">
+            <label class="admin-form__label" for="cat-id-lbl">Identity label</label>
+            <input
+              id="cat-id-lbl"
+              class="admin-form__input admin-form-page__control"
+              [(ngModel)]="identityLabel"
+              placeholder="Label for identity field on booking form"
+            />
+          </div>
+          <div class="admin-form__row admin-form__row--full">
+            <label class="admin-form__label" for="cat-id-fmt">Identity format</label>
+            <input
+              id="cat-id-fmt"
+              class="admin-form__input admin-form-page__control"
+              [(ngModel)]="identityFormat"
+              placeholder="e.g. 6-digit Alphabet, 14-digit Number"
+            />
+          </div>
+          <div class="admin-form__row admin-form__row--full">
+            <label class="admin-form__label" for="cat-doc">Document label</label>
+            <input
+              id="cat-doc"
+              class="admin-form__input admin-form-page__control"
+              [(ngModel)]="documentLabel"
+              placeholder="Document to upload"
+            />
+          </div>
+          <div class="admin-form__row admin-form__row--full">
+            <label class="admin-form__label admin-form__label--checkbox">
+              <input type="checkbox" [(ngModel)]="categoryIsActive" />
+              Active
+            </label>
           </div>
         </div>
       </section>
       <div class="admin-form__actions admin-form-page-card__actions">
-        <button type="button" class="admin-btn admin-btn--primary" (click)="submit()">
+        <button type="button" class="admin-btn admin-btn--primary" (click)="submitCategory()">
           <svg class="admin-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          {{ editingId ? 'Update' : 'Add' }}
+          {{ catEditId ? 'Update' : 'Add' }}
         </button>
         <button type="button" class="admin-btn admin-btn--secondary" (click)="showView()">
           <svg class="admin-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          View
+          Back to list
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!listMode && formKind === 'purpose'" class="admin-card admin-form-page-card">
+    <div class="admin-card__header admin-form-page-card__head">
+      <div class="admin-form-page-card__head-inner">
+        <h1 class="admin-form-page-card__title">Add/Modify Category &amp; Purpose</h1>
+        <p class="admin-form-page-card__subtitle">Booking purpose: name, maximum consecutive days, and active flag.</p>
+      </div>
+    </div>
+    <div class="admin-card__body admin-form-page-card__body">
+      <section class="admin-form-page-panel">
+        <div class="admin-form-page-panel__stack">
+          <div class="admin-form__row admin-form__row--full">
+            <label class="admin-form__label" for="pur-name">Booking purpose</label>
+            <input
+              id="pur-name"
+              class="admin-form__input admin-form-page__control"
+              [(ngModel)]="purposeName"
+              placeholder="Enter booking purpose"
+            />
+          </div>
+          <div class="admin-form__row admin-form__row--full">
+            <label class="admin-form__label" for="pur-max">Max days</label>
+            <input
+              id="pur-max"
+              type="number"
+              min="1"
+              max="365"
+              class="admin-form__input admin-form-page__control"
+              [(ngModel)]="maxDays"
+            />
+            <p class="admin-form__hint">Maximum consecutive days allowed for this purpose (e.g. 3 for marriage, 2 for others).</p>
+          </div>
+          <div class="admin-form__row admin-form__row--full">
+            <label class="admin-form__label admin-form__label--checkbox">
+              <input type="checkbox" [(ngModel)]="purposeIsActive" />
+              Active
+            </label>
+          </div>
+        </div>
+      </section>
+      <div class="admin-form__actions admin-form-page-card__actions">
+        <button type="button" class="admin-btn admin-btn--primary" (click)="submitPurpose()">
+          <svg class="admin-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          {{ purEditId ? 'Update' : 'Add' }}
+        </button>
+        <button type="button" class="admin-btn admin-btn--secondary" (click)="showView()">
+          <svg class="admin-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to list
         </button>
       </div>
     </div>
@@ -40,22 +128,63 @@
 
   <div *ngIf="listMode" class="admin-card admin-card--flush admin-card--fill">
     <header class="admin-card__header admin-card__header--split">
-      <h1 class="admin-card__header-title">Categories</h1>
-      <button type="button" class="admin-page__back" (click)="backToForm()">&lt; Back</button>
+      <div>
+        <h1 class="admin-card__header-title">Category &amp; purpose</h1>
+        <p class="admin-card__header-sub" style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--oa-text-muted, #6b7280)">
+          Booking categories and purposes used across the booking flow.
+        </p>
+      </div>
+      <div class="admin-card__header-actions">
+        <button type="button" class="admin-btn admin-btn--primary admin-btn--small" (click)="goAddCategory()">Add category</button>
+        <button type="button" class="admin-btn admin-btn--primary admin-btn--small" (click)="goAddPurpose()">Add purpose</button>
+      </div>
     </header>
     <div class="admin-data-list-scroll">
-      <article *ngFor="let r of rows; let i = index" class="admin-data-card">
+      <h2 class="add-cat-section-title">Booking categories</h2>
+      <article *ngFor="let r of categoryRows; let i = index" class="admin-data-card">
         <div class="admin-data-card__head">
           <div>
             <p class="admin-data-card__kicker">#{{ i + 1 }} · Category</p>
             <h2 class="admin-data-card__title">{{ r.categoryType }}</h2>
+            <p class="admin-data-card__meta">{{ r.isActive ? 'Active' : 'Inactive' }}</p>
           </div>
           <div class="admin-data-card__actions">
-            <button type="button" class="admin-icon-btn admin-icon-btn--edit" (click)="editRow(r)" aria-label="Edit row">✎</button>
-            <button type="button" class="admin-icon-btn admin-icon-btn--delete" (click)="deleteRow(r)" aria-label="Delete row">🗑</button>
+            <button type="button" class="admin-icon-btn admin-icon-btn--edit" (click)="editCategoryRow(r)" aria-label="Edit row">✎</button>
+            <button type="button" class="admin-icon-btn admin-icon-btn--delete" (click)="deleteCategoryRow(r)" aria-label="Delete row">🗑</button>
+          </div>
+        </div>
+        <dl class="admin-data-card__grid admin-data-card__grid--3">
+          <div class="admin-data-card__field">
+            <dt>Identity label</dt>
+            <dd>{{ r.identityLabel }}</dd>
+          </div>
+          <div class="admin-data-card__field">
+            <dt>Identity format</dt>
+            <dd>{{ r.identityFormat }}</dd>
+          </div>
+          <div class="admin-data-card__field admin-data-card__field--wide">
+            <dt>Document label</dt>
+            <dd>{{ r.documentLabel }}</dd>
+          </div>
+        </dl>
+      </article>
+      <p *ngIf="!categoryRows.length" class="admin-data-list__empty">No categories loaded.</p>
+
+      <h2 class="add-cat-section-title add-cat-section-title--second">Booking purposes</h2>
+      <article *ngFor="let r of purposeRows; let j = index" class="admin-data-card">
+        <div class="admin-data-card__head">
+          <div>
+            <p class="admin-data-card__kicker">#{{ j + 1 }} · Purpose</p>
+            <h2 class="admin-data-card__title">{{ r.purposeName }}</h2>
+            <p class="admin-data-card__meta">Max {{ r.maxDays }} day(s) · {{ r.isActive ? 'Active' : 'Inactive' }}</p>
+          </div>
+          <div class="admin-data-card__actions">
+            <button type="button" class="admin-icon-btn admin-icon-btn--edit" (click)="editPurposeRow(r)" aria-label="Edit row">✎</button>
+            <button type="button" class="admin-icon-btn admin-icon-btn--delete" (click)="deletePurposeRow(r)" aria-label="Delete row">🗑</button>
           </div>
         </div>
       </article>
+      <p *ngIf="!purposeRows.length" class="admin-data-list__empty">No purposes loaded.</p>
     </div>
   </div>
 </div>

@@ -9,7 +9,7 @@ import { AdminDataService, ImageBannerRecord } from '../../../core/admin-data.se
   styleUrls: ['./add-image-banner.component.css', '../../../shared/admin-forms.css'],
 })
 export class AddImageBannerComponent implements OnInit, OnDestroy {
-  listMode = false;
+  listMode = true;
   rows: ImageBannerRecord[] = [];
   editingId: string | null = null;
 
@@ -32,6 +32,7 @@ export class AddImageBannerComponent implements OnInit, OnDestroy {
     this.sub = this.data.imageBanners.subscribe((r) => (this.rows = r));
     this.qpSub = this.route.queryParamMap.subscribe((q) => {
       const edit = q.get('edit');
+      const add = q.get('add');
       if (edit) {
         this.listMode = false;
         const row = this.data.getImageBanners().find((x) => x.id === edit);
@@ -42,7 +43,11 @@ export class AddImageBannerComponent implements OnInit, OnDestroy {
           this.imageDataUrl = row.imageDataUrl;
           this.imgURL = row.imgURL;
         }
+      } else if (add === '1') {
+        this.listMode = false;
+        this.resetForm();
       } else {
+        this.listMode = true;
         this.editingId = null;
       }
     });
@@ -112,10 +117,8 @@ export class AddImageBannerComponent implements OnInit, OnDestroy {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
-  backToForm(): void {
-    this.listMode = false;
-    this.resetForm();
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  goAdd(): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { add: '1' } });
   }
 
   resetForm(): void {

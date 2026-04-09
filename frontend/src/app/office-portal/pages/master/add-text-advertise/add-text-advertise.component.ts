@@ -9,7 +9,7 @@ import { AdminDataService, TextAdvertiseRecord } from '../../../core/admin-data.
   styleUrls: ['./add-text-advertise.component.css', '../../../shared/admin-forms.css'],
 })
 export class AddTextAdvertiseComponent implements OnInit, OnDestroy {
-  listMode = false;
+  listMode = true;
   rows: TextAdvertiseRecord[] = [];
   editingId: string | null = null;
 
@@ -55,10 +55,8 @@ export class AddTextAdvertiseComponent implements OnInit, OnDestroy {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
-  backToForm(): void {
-    this.listMode = false;
-    this.resetForm();
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  goAdd(): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { add: '1' } });
   }
 
   resetForm(): void {

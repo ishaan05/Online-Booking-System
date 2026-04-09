@@ -30,6 +30,20 @@ public class VenueMasterEntity
 	[MaxLength(500)]
 	public string? GoogleMapLink { get; set; }
 
+	/// <summary>Optional physical columns (may exist on DB alongside <see cref="Facilities"/> JSON).</summary>
+	public int? Capacity { get; set; }
+
+	[Column("AreaSqMt")]
+	public decimal? AreaSqMt { get; set; }
+
+	public int? NoOfRooms { get; set; }
+
+	public int? NoOfKitchen { get; set; }
+
+	public int? NoOfToilet { get; set; }
+
+	public int? NoOfBathroom { get; set; }
+
 	public string? Facilities { get; set; }
 
 	public bool IsActive { get; set; } = true;

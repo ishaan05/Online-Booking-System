@@ -178,6 +178,15 @@
   margin: 0;
 }
 
+.admin-card__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
 .admin-card__body {
   padding: clamp(0.9rem, 2vw, 1.1rem) clamp(0.9rem, 2.5vw, 1.2rem) clamp(1rem, 2.5vw, 1.2rem);
   min-width: 0;

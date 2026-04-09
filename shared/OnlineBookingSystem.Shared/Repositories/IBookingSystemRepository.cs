@@ -20,6 +20,10 @@ public interface IBookingSystemRepository
 
 	Task<IReadOnlyList<VenueTypeVm>> GetVenueTypesActiveAsync(CancellationToken ct = default(CancellationToken));
 
+	Task<IReadOnlyList<VenueTypeVm>> GetAllVenueTypesAdminAsync(CancellationToken ct = default(CancellationToken));
+
+	Task<int> UpsertVenueTypeAsync(VenueTypeUpsertVm body, CancellationToken ct = default(CancellationToken));
+
 	Task<IReadOnlyList<TermsVm>> GetTermsActiveAsync(CancellationToken ct = default(CancellationToken));
 
 	Task<IReadOnlyList<BookingPurposeVm>> GetBookingPurposesActiveAsync(CancellationToken ct = default(CancellationToken));
@@ -93,6 +97,10 @@ public interface IBookingSystemRepository
 	Task DeleteBookingCategoryAsync(int id, CancellationToken ct = default(CancellationToken));
 
 	Task<IReadOnlyList<BookingPurposeVm>> GetAllBookingPurposesAsync(CancellationToken ct = default(CancellationToken));
+
+	Task<int> UpsertBookingPurposeAsync(BookingPurposeUpsertVm body, CancellationToken ct = default(CancellationToken));
+
+	Task DeleteBookingPurposeAsync(int id, CancellationToken ct = default(CancellationToken));
 
 	Task<IReadOnlyList<AdvertisementVm>> GetAllAdvertisementsAsync(CancellationToken ct = default(CancellationToken));
 

@@ -123,6 +123,36 @@ public class BookingSystemRepository : IBookingSystemRepository
 	private static string BuildFacilitiesJson(VenueMasterEntity v)
 	{
 		TryParseFacilitiesJson(v.Facilities, out string capacity, out string areaSqmt, out string rooms, out string kitchen, out string toilet, out string bathroom, out string notes);
+		if (v.Capacity.HasValue)
+		{
+			capacity = v.Capacity.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (v.AreaSqMt.HasValue)
+		{
+			areaSqmt = v.AreaSqMt.Value.ToString("0.##", CultureInfo.InvariantCulture);
+		}
+
+		if (v.NoOfRooms.HasValue)
+		{
+			rooms = v.NoOfRooms.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (v.NoOfKitchen.HasValue)
+		{
+			kitchen = v.NoOfKitchen.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (v.NoOfToilet.HasValue)
+		{
+			toilet = v.NoOfToilet.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (v.NoOfBathroom.HasValue)
+		{
+			bathroom = v.NoOfBathroom.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
 		Dictionary<string, string> dictionary = new Dictionary<string, string>();
 		if (!string.IsNullOrEmpty(capacity))
 		{
@@ -216,7 +246,8 @@ public class BookingSystemRepository : IBookingSystemRepository
 				orderby i.SortOrder
 				select i.ImagePath, ct);
 			TryParseFacilitiesJson(x.v.Facilities, out string cap, out string _, out string _, out string _, out string _, out string _, out string _);
-			outList.Add(new VenueListVm(x.v.VenueID, x.v.VenueTypeID, x.TypeName, x.v.VenueName, x.v.VenueCode, x.v.Address, x.v.City, x.v.Division, x.v.GoogleMapLink, BuildFacilitiesJson(x.v), primary, int.TryParse(cap, out var c) ? new int?(c) : ((int?)null)));
+			int? capN = x.v.Capacity ?? (int.TryParse(cap, out var c) ? c : (int?)null);
+			outList.Add(new VenueListVm(x.v.VenueID, x.v.VenueTypeID, x.TypeName, x.v.VenueName, x.v.VenueCode, x.v.Address, x.v.City, x.v.Division, x.v.GoogleMapLink, BuildFacilitiesJson(x.v), primary, capN));
 			cap = null;
 		}
 		return outList;
@@ -238,6 +269,36 @@ public class BookingSystemRepository : IBookingSystemRepository
 			select new VenueImageVm(i.ImageID, i.VenueID, i.ImagePath, i.Caption, i.SortOrder, i.IsActive), ct);
 		IReadOnlyList<VenueRentRuleVm> rules = await GetRentRulesForHallAsync(id, ct);
 		TryParseFacilitiesJson(h.Facilities, out string cap, out string area, out string rooms, out string kit, out string toi, out string bath, out string notes);
+		if (h.Capacity.HasValue)
+		{
+			cap = h.Capacity.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (h.AreaSqMt.HasValue)
+		{
+			area = h.AreaSqMt.Value.ToString("0.##", CultureInfo.InvariantCulture);
+		}
+
+		if (h.NoOfRooms.HasValue)
+		{
+			rooms = h.NoOfRooms.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (h.NoOfKitchen.HasValue)
+		{
+			kit = h.NoOfKitchen.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (h.NoOfToilet.HasValue)
+		{
+			toi = h.NoOfToilet.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		if (h.NoOfBathroom.HasValue)
+		{
+			bath = h.NoOfBathroom.Value.ToString(CultureInfo.InvariantCulture);
+		}
+
 		return new VenueDetailVm(PrimaryImagePath: images.FirstOrDefault()?.ImagePath, VenueID: h.VenueID, VenueTypeID: h.VenueTypeID, TypeName: typeName, VenueName: h.VenueName, VenueCode: h.VenueCode, Address: h.Address, City: h.City, Division: h.Division, GoogleMapLink: h.GoogleMapLink, Facilities: BuildFacilitiesJson(h), Images: images, RentRules: rules, Capacity: cap, AreaInSqmt: area, NoOfRoomsAvailable: rooms, NoOfKitchen: kit, NoOfToilet: toi, NoOfBathroom: bath, AdditionalFacilities: notes);
 	}
 
@@ -272,6 +333,47 @@ public class BookingSystemRepository : IBookingSystemRepository
 			where t.IsActive
 			orderby t.VenueTypeID
 			select t), ct)).Select((VenueTypeEntity t) => new VenueTypeVm(t.VenueTypeID, t.TypeName, t.IsActive)).ToList();
+	}
+
+	public async Task<IReadOnlyList<VenueTypeVm>> GetAllVenueTypesAdminAsync(CancellationToken ct = default(CancellationToken))
+	{
+		return await _db.VenueTypes.AsNoTracking()
+			.OrderBy((VenueTypeEntity t) => t.VenueTypeID)
+			.Select((VenueTypeEntity t) => new VenueTypeVm(t.VenueTypeID, t.TypeName, t.IsActive))
+			.ToListAsync(ct);
+	}
+
+	public async Task<int> UpsertVenueTypeAsync(VenueTypeUpsertVm body, CancellationToken ct = default(CancellationToken))
+	{
+		string name = (body.TypeName ?? "").Trim();
+		if (name.Length == 0)
+		{
+			throw new InvalidOperationException("Venue type name is required.");
+		}
+
+		if (name.Length > 50)
+		{
+			name = name.Substring(0, 50);
+		}
+
+		if (body.VenueTypeID.HasValue && body.VenueTypeID.Value > 0)
+		{
+			int vid = body.VenueTypeID.Value;
+			VenueTypeEntity row = await EntityFrameworkQueryableExtensions.FirstAsync<VenueTypeEntity>((IQueryable<VenueTypeEntity>)_db.VenueTypes, (Expression<Func<VenueTypeEntity, bool>>)((VenueTypeEntity t) => t.VenueTypeID == vid), ct);
+			row.TypeName = name;
+			row.IsActive = body.IsActive;
+			await ((DbContext)_db).SaveChangesAsync(ct);
+			return vid;
+		}
+
+		VenueTypeEntity inserted = new VenueTypeEntity
+		{
+			TypeName = name,
+			IsActive = body.IsActive
+		};
+		_db.VenueTypes.Add(inserted);
+		await ((DbContext)_db).SaveChangesAsync(ct);
+		return inserted.VenueTypeID;
 	}
 
 	public async Task<IReadOnlyList<TermsVm>> GetTermsActiveAsync(CancellationToken ct = default(CancellationToken))
@@ -1554,7 +1656,7 @@ public class BookingSystemRepository : IBookingSystemRepository
 		}
 		return (await EntityFrameworkQueryableExtensions.ToListAsync<VenueMasterEntity>((IQueryable<VenueMasterEntity>)(from v in q
 			orderby v.VenueName
-			select v), ct)).Select((VenueMasterEntity h) => new VenueAdminRowVm(h.VenueID, h.VenueTypeID, h.VenueName, h.VenueCode, h.Address, h.City, h.Division, h.GoogleMapLink, h.Facilities, h.IsActive, h.CreatedAt)).ToList();
+			select v), ct)).Select((VenueMasterEntity h) => new VenueAdminRowVm(h.VenueID, h.VenueTypeID, h.VenueName, h.VenueCode, h.Address, h.City, h.Division, h.GoogleMapLink, h.Facilities, h.IsActive, h.CreatedAt, h.Capacity, h.AreaSqMt, h.NoOfRooms, h.NoOfKitchen, h.NoOfToilet, h.NoOfBathroom)).ToList();
 	}
 
 	public async Task<int> UpsertVenueAsync(VenueMasterUpsertVm body, CancellationToken ct = default(CancellationToken))
@@ -1584,17 +1686,58 @@ public class BookingSystemRepository : IBookingSystemRepository
 			};
 			_db.VenueMasters.Add(h);
 		}
-		h.VenueTypeID = body.VenueTypeID;
-		h.VenueName = body.VenueName;
-		h.VenueCode = body.VenueCode;
-		h.Address = body.Address;
-		h.City = (string.IsNullOrWhiteSpace(body.City) ? "Nagpur" : body.City.Trim());
-		h.Division = (string.IsNullOrWhiteSpace(body.Division) ? "Nagpur" : body.Division.Trim());
-		h.GoogleMapLink = body.GoogleMapLink;
+		int typeId = body.VenueTypeID;
+		if (!await _db.VenueTypes.AsNoTracking().AnyAsync((VenueTypeEntity t) => t.VenueTypeID == typeId, ct))
+		{
+			int fallback = await _db.VenueTypes.AsNoTracking()
+				.OrderBy((VenueTypeEntity t) => t.VenueTypeID)
+				.Select((VenueTypeEntity t) => t.VenueTypeID)
+				.FirstOrDefaultAsync(ct);
+			if (fallback == 0)
+			{
+				throw new InvalidOperationException("No rows in VenueType. Add at least one venue type, or restart the API to seed a default.");
+			}
+
+			typeId = fallback;
+		}
+
+		h.VenueTypeID = typeId;
+		h.VenueName = TruncateForVenue(body.VenueName, 100);
+		h.VenueCode = TruncateForVenue(body.VenueCode, 10);
+		h.Address = TruncateForVenue(body.Address, 255);
+		h.City = TruncateForVenue(string.IsNullOrWhiteSpace(body.City) ? "Nagpur" : body.City.Trim(), 100);
+		h.Division = TruncateForVenue(string.IsNullOrWhiteSpace(body.Division) ? "Nagpur" : body.Division.Trim(), 100);
+		h.GoogleMapLink = TruncateForVenueNullable(body.GoogleMapLink, 500);
 		h.IsActive = body.IsActive;
 		MergeFacilitiesIntoVenue(h, body.Facilities);
+		h.Capacity = body.Capacity;
+		h.AreaSqMt = body.AreaSqMt;
+		h.NoOfRooms = body.NoOfRooms;
+		h.NoOfKitchen = body.NoOfKitchen;
+		h.NoOfToilet = body.NoOfToilet;
+		h.NoOfBathroom = body.NoOfBathroom;
 		await ((DbContext)_db).SaveChangesAsync(ct);
 		return h.VenueID;
+	}
+
+	private static string TruncateForVenue(string value, int maxLen)
+	{
+		if (string.IsNullOrEmpty(value))
+		{
+			return "";
+		}
+
+		return value.Length <= maxLen ? value : value.Substring(0, maxLen);
+	}
+
+	private static string? TruncateForVenueNullable(string? value, int maxLen)
+	{
+		if (string.IsNullOrEmpty(value))
+		{
+			return null;
+		}
+
+		return value.Length <= maxLen ? value : value.Substring(0, maxLen);
 	}
 
 	public async Task DeleteVenueAsync(int id, CancellationToken ct = default(CancellationToken))
@@ -1721,6 +1864,52 @@ public class BookingSystemRepository : IBookingSystemRepository
 		return (await EntityFrameworkQueryableExtensions.ToListAsync<BookingPurposeEntity>((IQueryable<BookingPurposeEntity>)(from p in EntityFrameworkQueryableExtensions.AsNoTracking<BookingPurposeEntity>((IQueryable<BookingPurposeEntity>)_db.BookingPurposes)
 			orderby p.PurposeID
 			select p), ct)).Select((BookingPurposeEntity p) => new BookingPurposeVm(p.PurposeID, p.PurposeName, p.MaxDays, p.IsActive)).ToList();
+	}
+
+	public async Task<int> UpsertBookingPurposeAsync(BookingPurposeUpsertVm body, CancellationToken ct = default(CancellationToken))
+	{
+		string name = (body.PurposeName ?? "").Trim();
+		if (name.Length == 0)
+		{
+			throw new InvalidOperationException("Purpose name is required.");
+		}
+
+		if (name.Length > 150)
+		{
+			name = name.Substring(0, 150);
+		}
+
+		int maxDays = body.MaxDays < 1 ? 1 : (body.MaxDays > 365 ? 365 : body.MaxDays);
+		if (body.PurposeID.HasValue && body.PurposeID.Value > 0)
+		{
+			int pid = body.PurposeID.Value;
+			BookingPurposeEntity row = await EntityFrameworkQueryableExtensions.FirstAsync<BookingPurposeEntity>((IQueryable<BookingPurposeEntity>)_db.BookingPurposes, (Expression<Func<BookingPurposeEntity, bool>>)((BookingPurposeEntity p) => p.PurposeID == pid), ct);
+			row.PurposeName = name;
+			row.MaxDays = maxDays;
+			row.IsActive = body.IsActive;
+			await ((DbContext)_db).SaveChangesAsync(ct);
+			return pid;
+		}
+
+		BookingPurposeEntity inserted = new BookingPurposeEntity
+		{
+			PurposeName = name,
+			MaxDays = maxDays,
+			IsActive = body.IsActive
+		};
+		_db.BookingPurposes.Add(inserted);
+		await ((DbContext)_db).SaveChangesAsync(ct);
+		return inserted.PurposeID;
+	}
+
+	public async Task DeleteBookingPurposeAsync(int id, CancellationToken ct = default(CancellationToken))
+	{
+		BookingPurposeEntity row = await EntityFrameworkQueryableExtensions.FirstOrDefaultAsync<BookingPurposeEntity>((IQueryable<BookingPurposeEntity>)_db.BookingPurposes, (Expression<Func<BookingPurposeEntity, bool>>)((BookingPurposeEntity p) => p.PurposeID == id), ct);
+		if (row != null)
+		{
+			_db.BookingPurposes.Remove(row);
+			await ((DbContext)_db).SaveChangesAsync(ct);
+		}
 	}
 
 	public async Task<IReadOnlyList<AdvertisementVm>> GetAllAdvertisementsAsync(CancellationToken ct = default(CancellationToken))

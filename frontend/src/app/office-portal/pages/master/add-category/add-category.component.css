@@ -1,1 +1,15 @@
-/* — */
+.add-cat-section-title {
+  margin: 0 0 0.65rem;
+  padding: 0.35rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--oa-text-muted, #6b7280);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.add-cat-section-title--second {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--oa-border, #e5e7eb);
+}

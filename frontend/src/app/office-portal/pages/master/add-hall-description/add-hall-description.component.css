@@ -29,3 +29,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.venues-list__status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}

@@ -171,7 +171,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
           kind: 'hall',
           title: h.name,
           sub: h.shortCode ? `${h.shortCode}${h.city ? ' · ' + h.city : ''}` : 'Hall / venue',
-          route: `/admin/dashboard/master/add-hall-description?edit=${encodeURIComponent(h.id)}`,
+          route: `/admin/dashboard/master/venue?edit=${encodeURIComponent(h.id)}`,
         });
       }
     }
@@ -227,12 +227,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
       { prefix: '/admin/dashboard/admin/approved-bookings', title: 'Approved bookings' },
       { prefix: '/admin/dashboard/admin/admin-booking', title: 'Admin booking' },
       { prefix: '/admin/dashboard/admin/change-password', title: 'Settings' },
-      { prefix: '/admin/dashboard/master/venues', title: 'Modify Venues' },
+      { prefix: '/admin/dashboard/master/add-venue-type', title: 'Add/Modify Venue Type' },
+      { prefix: '/admin/dashboard/master/venue', title: 'Add/Modify Venue' },
       { prefix: '/admin/dashboard/master/add-employee', title: 'Add/Modify Role' },
       { prefix: '/admin/dashboard/master/add-rate-chart', title: 'Add/Modify Rates & Capacity' },
-      { prefix: '/admin/dashboard/master/add-category', title: 'Add/Modify Catagories' },
+      { prefix: '/admin/dashboard/master/add-category', title: 'Add/Modify Category & Purpose' },
       { prefix: '/admin/dashboard/master/add-account-details', title: 'Add/Modify Bank Details' },
-      { prefix: '/admin/dashboard/master/add-hall-description', title: 'Add/Modify Hall Description' },
       { prefix: '/admin/dashboard/master/add-text-advertise', title: 'Add/Modify Text Advertisement' },
       { prefix: '/admin/dashboard/master/add-image-advertise', title: 'Add/Modify Image Advertisement' },
       { prefix: '/admin/dashboard/master/add-image-banner', title: 'Add Dashboard Banner' },

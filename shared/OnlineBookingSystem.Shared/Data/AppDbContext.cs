@@ -74,6 +74,7 @@ public class AppDbContext : DbContext
 		{
 			RelationalEntityTypeBuilderExtensions.ToTable<VenueMasterEntity>(e, "VenueMaster");
 			e.HasKey((Expression<Func<VenueMasterEntity, object>>)((VenueMasterEntity x) => x.VenueID));
+			e.Property((Expression<Func<VenueMasterEntity, decimal?>>)((VenueMasterEntity x) => x.AreaSqMt)).HasColumnType("decimal(10,2)");
 			e.HasOne<VenueTypeEntity>((Expression<Func<VenueMasterEntity, VenueTypeEntity>>)null).WithMany((string)null).HasForeignKey((Expression<Func<VenueMasterEntity, object>>)((VenueMasterEntity x) => x.VenueTypeID))
 				.OnDelete((DeleteBehavior)1);
 		});

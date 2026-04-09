@@ -11,6 +11,7 @@ import { AddRateChartComponent } from './pages/master/add-rate-chart/add-rate-ch
 import { AddCategoryComponent } from './pages/master/add-category/add-category.component';
 import { AddAccountDetailsComponent } from './pages/master/add-account-details/add-account-details.component';
 import { AddHallDescriptionComponent } from './pages/master/add-hall-description/add-hall-description.component';
+import { AddVenueTypeComponent } from './pages/master/add-venue-type/add-venue-type.component';
 import { AddTextAdvertiseComponent } from './pages/master/add-text-advertise/add-text-advertise.component';
 import { AddImageAdvertiseComponent } from './pages/master/add-image-advertise/add-image-advertise.component';
 import { AddImageBannerComponent } from './pages/master/add-image-banner/add-image-banner.component';
@@ -23,7 +24,6 @@ import { CancelledBookingsComponent } from './pages/admin-actions/cancelled-book
 import { AdminBookingsComponent } from './pages/admin-actions/admin-bookings/admin-bookings.component';
 import { ChangePasswordComponent } from './pages/admin-actions/change-password/change-password.component';
 import { TotalBookingsComponent } from './pages/admin-actions/total-bookings/total-bookings.component';
-import { VenuesListComponent } from './pages/master/venues-list/venues-list.component';
 import { CancelBookingComponent } from './pages/admin-actions/cancel-booking/cancel-booking.component';
 
 /** RoleID from OfficeUser: 1 = Super Admin, 2 = Verifying Authority, 3 = Approving Authority */
@@ -44,9 +44,25 @@ const routes: Routes = [
       { path: '', pathMatch: 'full', component: DashboardHomeComponent },
       {
         path: 'master/venues',
-        component: VenuesListComponent,
+        redirectTo: 'master/venue',
+        pathMatch: 'full',
+      },
+      {
+        path: 'master/add-hall-description',
+        redirectTo: 'master/venue',
+        pathMatch: 'full',
+      },
+      {
+        path: 'master/venue',
+        component: AddHallDescriptionComponent,
         canActivate: [OfficePortalRoleGuard],
         data: { officeAllowedRoleIds: [R_SUPER, R_VERIFY, R_APPROVE] },
+      },
+      {
+        path: 'master/add-venue-type',
+        component: AddVenueTypeComponent,
+        canActivate: [OfficePortalRoleGuard],
+        data: { officeAllowedRoleIds: [R_SUPER] },
       },
       {
         path: 'master/add-employee',
@@ -69,12 +85,6 @@ const routes: Routes = [
       {
         path: 'master/add-account-details',
         component: AddAccountDetailsComponent,
-        canActivate: [OfficePortalRoleGuard],
-        data: { officeAllowedRoleIds: [R_SUPER] },
-      },
-      {
-        path: 'master/add-hall-description',
-        component: AddHallDescriptionComponent,
         canActivate: [OfficePortalRoleGuard],
         data: { officeAllowedRoleIds: [R_SUPER] },
       },

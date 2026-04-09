@@ -9,7 +9,7 @@ import { AdminDataService, RateChartRecord } from '../../../core/admin-data.serv
   styleUrls: ['./add-rate-chart.component.css', '../../../shared/admin-forms.css'],
 })
 export class AddRateChartComponent implements OnInit, OnDestroy {
-  listMode = false;
+  listMode = true;
   rows: RateChartRecord[] = [];
   hallOptions: string[] = [];
   editingId: string | null = null;
@@ -37,6 +37,7 @@ export class AddRateChartComponent implements OnInit, OnDestroy {
     this.sub.add(this.data.halls.subscribe(() => this.refreshHalls()));
     this.qpSub = this.route.queryParamMap.subscribe((q) => {
       const edit = q.get('edit');
+      const add = q.get('add');
       if (edit) {
         this.listMode = false;
         const row = this.data.getRateCharts().find((x) => x.id === edit);
@@ -50,7 +51,11 @@ export class AddRateChartComponent implements OnInit, OnDestroy {
           this.effectiveFrom = row.effectiveFrom;
           this.effectiveTo = row.effectiveTo;
         }
+      } else if (add === '1') {
+        this.listMode = false;
+        this.resetForm();
       } else {
+        this.listMode = true;
         this.editingId = null;
       }
     });
@@ -70,10 +75,8 @@ export class AddRateChartComponent implements OnInit, OnDestroy {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
-  backToForm(): void {
-    this.listMode = false;
-    this.resetForm();
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  goAdd(): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { add: '1' } });
   }
 
   resetForm(): void {

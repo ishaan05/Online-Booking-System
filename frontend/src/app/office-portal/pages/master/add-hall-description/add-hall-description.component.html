@@ -2,7 +2,7 @@
   <div *ngIf="!listMode" class="admin-card admin-form-page-card hall-form-card">
     <div class="admin-card__header admin-form-page-card__head">
       <div class="admin-form-page-card__head-inner">
-        <h1 class="admin-form-page-card__title">Add/Modify Hall Description</h1>
+        <h1 class="admin-form-page-card__title">Add/Modify Venue</h1>
         <p class="admin-form-page-card__subtitle">Details, facilities, photo, and status for each community hall.</p>
       </div>
     </div>
@@ -13,6 +13,15 @@
             <div class="admin-form__row admin-form__row--full">
               <label class="admin-form__label" for="h-short">Short code</label>
               <input id="h-short" class="admin-form__input admin-form-page__control" [(ngModel)]="shortCode" placeholder="Enter short code" />
+            </div>
+            <div class="admin-form__row admin-form__row--full">
+              <label class="admin-form__label" for="h-vt">Venue type</label>
+              <select id="h-vt" class="admin-form__select admin-form-page__control" [(ngModel)]="venueTypeId">
+                <option *ngFor="let t of venueTypeOptions" [ngValue]="+t.id">{{ t.typeName }}{{ t.isActive ? '' : ' (inactive)' }}</option>
+              </select>
+              <p *ngIf="!venueTypeOptions.length" class="admin-form__hint">
+                No venue types loaded. Super Admins should use <strong>Add/Modify Venue Type</strong> first, then refresh or sign in again.
+              </p>
             </div>
             <div class="admin-form__row">
               <label class="admin-form__label" for="h-name">Name of community hall</label>
@@ -103,10 +112,9 @@
         </button>
         <button type="button" class="admin-btn admin-btn--secondary" (click)="showView()">
           <svg class="admin-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          View
+          Back to list
         </button>
       </div>
     </div>
@@ -114,8 +122,15 @@
 
   <div *ngIf="listMode" class="admin-card admin-card--flush admin-card--fill">
     <header class="admin-card__header admin-card__header--split">
-      <h1 class="admin-card__header-title">Hall descriptions</h1>
-      <button type="button" class="admin-page__back" (click)="backToForm()">&lt; Back</button>
+      <div>
+        <h1 class="admin-card__header-title">Venues</h1>
+        <p class="admin-card__header-sub" style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--oa-text-muted, #6b7280)">
+          Halls and mandaps in the system{{ auth.isSuperAdmin() ? ' — super admin can add, edit, delete, and set active status.' : '.' }}
+        </p>
+      </div>
+      <div class="admin-card__header-actions" *ngIf="auth.isSuperAdmin()">
+        <button type="button" class="admin-btn admin-btn--primary" (click)="goAddVenue()">Add Venue</button>
+      </div>
     </header>
     <div class="admin-data-list-scroll">
       <article *ngFor="let r of rows; let i = index" class="admin-data-card">
@@ -124,10 +139,20 @@
             <p class="admin-data-card__kicker">#{{ i + 1 }} · {{ r.shortCode }}</p>
             <h2 class="admin-data-card__title">{{ r.name }}</h2>
           </div>
-          <div class="admin-data-card__actions">
+          <div class="venues-list__status">
             <span class="admin-pill" [class.admin-pill--inactive]="r.status === 'Inactive'">{{ r.status }}</span>
-            <button type="button" class="admin-icon-btn admin-icon-btn--edit" (click)="editRow(r)" aria-label="Edit row">✎</button>
-            <button type="button" class="admin-icon-btn admin-icon-btn--delete" (click)="deleteRow(r)" aria-label="Delete row">🗑</button>
+            <button
+              *ngIf="auth.isSuperAdmin()"
+              type="button"
+              class="admin-btn admin-btn--small"
+              (click)="toggleVenueActive(r)"
+            >
+              {{ r.status === 'Active' ? 'Set inactive' : 'Set active' }}
+            </button>
+            <ng-container *ngIf="auth.isSuperAdmin()">
+              <button type="button" class="admin-icon-btn admin-icon-btn--edit" (click)="editRow(r)" aria-label="Edit row">✎</button>
+              <button type="button" class="admin-icon-btn admin-icon-btn--delete" (click)="deleteRow(r)" aria-label="Delete row">🗑</button>
+            </ng-container>
           </div>
         </div>
         <div *ngIf="r.photoDataUrl" class="admin-data-card__media">
@@ -172,6 +197,7 @@
           </div>
         </dl>
       </article>
+      <p *ngIf="!rows.length" class="admin-data-list__empty">No venues loaded yet. Add or sync halls from master data.</p>
     </div>
   </div>
 </div>

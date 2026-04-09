@@ -87,10 +87,17 @@ public class VenuesController : ControllerBase
 	[Authorize(Roles = AppRoles.SuperAdmin)]
 	public async Task<ActionResult> Upsert([FromBody] VenueMasterUpsertVm body, [FromServices] IBookingSystemRepository repo, CancellationToken ct)
 	{
-		return Ok(new
+		try
 		{
-			VenueID = await repo.UpsertVenueAsync(body, ct)
-		});
+			return Ok(new
+			{
+				VenueID = await repo.UpsertVenueAsync(body, ct)
+			});
+		}
+		catch (InvalidOperationException ex)
+		{
+			return BadRequest(new { message = ex.Message });
+		}
 	}
 
 	[HttpDelete("{id:int}")]

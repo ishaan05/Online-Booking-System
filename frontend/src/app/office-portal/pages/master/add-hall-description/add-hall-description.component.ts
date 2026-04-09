@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AdminDataService, HallDescriptionRecord } from '../../../core/admin-data.service';
+import { AuthService } from '../../../core/auth.service';
 
 @Component({
   selector: 'app-add-hall-description',
@@ -9,11 +10,13 @@ import { AdminDataService, HallDescriptionRecord } from '../../../core/admin-dat
   styleUrls: ['./add-hall-description.component.css', '../../../shared/admin-forms.css'],
 })
 export class AddHallDescriptionComponent implements OnInit, OnDestroy {
-  listMode = false;
+  listMode = true;
   rows: HallDescriptionRecord[] = [];
   editingId: string | null = null;
 
   shortCode = '';
+  /** Selected VenueType.VenueTypeID */
+  venueTypeId = 1;
   name = '';
   gpsLocation = '';
   capacity = '';
@@ -36,32 +39,42 @@ export class AddHallDescriptionComponent implements OnInit, OnDestroy {
     private data: AdminDataService,
     private route: ActivatedRoute,
     private router: Router,
+    readonly auth: AuthService,
   ) {}
 
   ngOnInit(): void {
-    this.sub = this.data.halls.subscribe((r) => (this.rows = r));
+    this.sub = this.data.halls.subscribe((r) => {
+      this.rows = [...r].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+      const edit = this.route.snapshot.queryParamMap.get('edit');
+      if (edit && !this.listMode) {
+        const row = this.rows.find((x) => x.id === edit);
+        if (row) {
+          this.applyRow(row);
+        }
+      }
+    });
     this.qpSub = this.route.queryParamMap.subscribe((q) => {
       const edit = q.get('edit');
+      const add = q.get('add');
+      const superOnly = edit || add === '1';
+      if (superOnly && !this.auth.isSuperAdmin()) {
+        this.listMode = true;
+        this.editingId = null;
+        void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+        return;
+      }
       if (edit) {
         this.listMode = false;
         const row = this.data.getHalls().find((x) => x.id === edit);
         if (row) {
-          this.editingId = row.id;
-          this.shortCode = row.shortCode;
-          this.name = row.name;
-          this.gpsLocation = row.gpsLocation;
-          this.capacity = row.capacity;
-          this.address = row.address;
-          this.areaSqmt = row.areaSqmt;
-          this.rooms = row.rooms;
-          this.kitchen = row.kitchen;
-          this.toilet = row.toilet;
-          this.bathroom = row.bathroom;
-          this.facilities = row.facilities;
-          this.photoDataUrl = row.photoDataUrl;
-          this.status = row.status;
+          this.applyRow(row);
         }
+      } else if (add === '1') {
+        this.listMode = false;
+        this.editingId = null;
+        this.resetForm();
       } else {
+        this.listMode = true;
         this.editingId = null;
       }
     });
@@ -70,6 +83,24 @@ export class AddHallDescriptionComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
     this.qpSub?.unsubscribe();
+  }
+
+  private applyRow(row: HallDescriptionRecord): void {
+    this.editingId = row.id;
+    this.shortCode = row.shortCode;
+    this.venueTypeId = row.venueTypeId > 0 ? row.venueTypeId : 1;
+    this.name = row.name;
+    this.gpsLocation = row.gpsLocation;
+    this.capacity = row.capacity;
+    this.address = row.address;
+    this.areaSqmt = row.areaSqmt;
+    this.rooms = row.rooms;
+    this.kitchen = row.kitchen;
+    this.toilet = row.toilet;
+    this.bathroom = row.bathroom;
+    this.facilities = row.facilities;
+    this.photoDataUrl = row.photoDataUrl;
+    this.status = row.status;
   }
 
   get photoPickLabel(): string {
@@ -128,15 +159,14 @@ export class AddHallDescriptionComponent implements OnInit, OnDestroy {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
-  backToForm(): void {
-    this.listMode = false;
-    this.resetForm();
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+  goAddVenue(): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { add: '1' } });
   }
 
   resetForm(): void {
     this.editingId = null;
     this.shortCode = '';
+    this.venueTypeId = this.defaultVenueTypeId();
     this.name = '';
     this.gpsLocation = '';
     this.capacity = '';
@@ -152,12 +182,44 @@ export class AddHallDescriptionComponent implements OnInit, OnDestroy {
     this.status = 'Active';
   }
 
+  /** Venue types for dropdown (Super Admin); falls back to empty — save still uses venueTypeId. */
+  get venueTypeOptions() {
+    const all = this.data.getVenueTypes();
+    if (!this.editingId) {
+      const active = all.filter((t) => t.isActive);
+      return active.length ? active : all;
+    }
+    const row = this.data.getHalls().find((x) => x.id === this.editingId);
+    const tid = row?.venueTypeId;
+    const active = all.filter((t) => t.isActive);
+    if (tid != null && tid > 0 && !active.some((t) => Number(t.id) === tid)) {
+      const cur = all.find((t) => Number(t.id) === tid);
+      if (cur) {
+        return [...active, cur];
+      }
+    }
+    return active.length ? active : all;
+  }
+
+  private defaultVenueTypeId(): number {
+    const active = this.data.getVenueTypes().filter((t) => t.isActive);
+    const first = (active.length ? active : this.data.getVenueTypes())[0];
+    return first ? Number(first.id) : 1;
+  }
+
   submit(): void {
+    if (!this.auth.isSuperAdmin()) {
+      return;
+    }
     if (!this.shortCode.trim() || !this.name.trim()) {
+      return;
+    }
+    if (!this.venueTypeId || this.venueTypeId < 1) {
       return;
     }
     this.data.upsertHall({
       id: this.editingId || undefined,
+      venueTypeId: this.venueTypeId,
       shortCode: this.shortCode.trim(),
       name: this.name.trim(),
       gpsLocation: this.gpsLocation.trim(),
@@ -177,10 +239,28 @@ export class AddHallDescriptionComponent implements OnInit, OnDestroy {
   }
 
   editRow(row: HallDescriptionRecord): void {
+    if (!this.auth.isSuperAdmin()) {
+      return;
+    }
     void this.router.navigate([], { relativeTo: this.route, queryParams: { edit: row.id } });
   }
 
   deleteRow(row: HallDescriptionRecord): void {
+    if (!this.auth.isSuperAdmin()) {
+      return;
+    }
     this.data.deleteHall(row.id);
+  }
+
+  toggleVenueActive(v: HallDescriptionRecord): void {
+    if (!this.auth.isSuperAdmin()) {
+      return;
+    }
+    const id = Number(v.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      return;
+    }
+    const next = v.status !== 'Active';
+    this.data.setVenueActive(id, next);
   }
 }
