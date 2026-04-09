@@ -3,8 +3,8 @@ WORKDIR /src
 
 COPY . .
 
-RUN dotnet restore server/OnlineBookingSystem.Api/OnlineBookingSystem.Api.csproj
-RUN dotnet publish server/OnlineBookingSystem.Api/OnlineBookingSystem.Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet restore online-booking-system/server/OnlineBookingSystem.Api/OnlineBookingSystem.Api.csproj
+RUN dotnet publish online-booking-system/server/OnlineBookingSystem.Api/OnlineBookingSystem.Api.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
