@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Copies the entire repo (from its parent folder) excluding heavy/regenerable folders — suitable for archival or copying to a USB/server for rebuild.
+  Copies the entire repo (from its parent folder) excluding heavy/regenerable folders - suitable for archival or copying to a USB/server for rebuild.
 
 .DESCRIPTION
   Excludes: node_modules, .angular, dist, bin, obj, .vs, publish, artifacts, and common caches.
@@ -22,8 +22,8 @@
   If set, compresses the backup folder to <Destination>.zip after robocopy completes.
 
 .EXAMPLE
-  pwsh -File scripts/backup-project-source.ps1
-  pwsh -File scripts/backup-project-source.ps1 -ExcludeGit -Zip
+  powershell -ExecutionPolicy Bypass -File scripts\backup-project-source.ps1
+  powershell -ExecutionPolicy Bypass -File scripts\backup-project-source.ps1 -ExcludeGit -Zip
 #>
 [CmdletBinding()]
 param(
@@ -86,12 +86,12 @@ $rcArgs = @(
 ) + $xd
 & robocopy.exe @rcArgs | Out-Host
 $rc = $LASTEXITCODE
-# Robocopy: 0–7 = success (0 nothing, 1 files, 2 dirs, etc.); 8+ = failure
+# Robocopy: 0-7 = success (0 nothing, 1 files, 2 dirs, etc.); 8+ = failure
 if ($rc -ge 8) {
   throw "robocopy failed with exit code $rc"
 }
 
-Write-Host "robocopy finished (exit $rc; 0–7 is normal). Backup folder ready."
+Write-Host "robocopy finished (exit $rc; 0-7 is normal). Backup folder ready."
 
 if ($Zip) {
   $zipPath = "$Destination.zip"
@@ -102,6 +102,7 @@ if ($Zip) {
 }
 
 Write-Host ""
-Write-Host "NEXT: To restore on another machine, copy the folder (or unzip), then:"
-Write-Host "  cd frontend && npm ci && npm run start (or build)"
-Write-Host "  dotnet restore backend/OnlineBookingSystem.sln"
+Write-Host 'NEXT: To restore on another machine, copy the folder (or unzip), then run:'
+Write-Host '  cd frontend; npm ci; npm run start'
+Write-Host '  (or: npm run build for production static files)'
+Write-Host '  dotnet restore backend/OnlineBookingSystem.sln'
