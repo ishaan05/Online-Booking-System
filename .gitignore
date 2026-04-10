@@ -17,6 +17,9 @@ frontend/npm-debug.log
 **/appsettings.Development.json
 .env
 
+# Local publish output (scripts/create-windows-server-package.ps1)
+artifacts/
+
 # Angular output copied into API for single-host deploy (see deploy/build-and-publish.ps1)
 backend/OnlineBookingSystem.Api/wwwroot/*
 !backend/OnlineBookingSystem.Api/wwwroot/.gitkeep

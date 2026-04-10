@@ -1,5 +1,6 @@
 # Build production Angular app, copy into API wwwroot, publish .NET (Release).
-# Run from repo root:  pwsh -File deploy/build-and-publish.ps1
+# Run from repo root:  powershell -File deploy/build-and-publish.ps1
+# For a clean package under artifacts\ (recommended before copying to a server), use: scripts/create-windows-server-package.ps1
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
 if (-not (Test-Path "$root/frontend/package.json")) {
