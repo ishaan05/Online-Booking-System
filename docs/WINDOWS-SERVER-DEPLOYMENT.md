@@ -81,10 +81,12 @@ Set for the **application pool** or **site** (Configuration Editor / `web.config
 |----------|------------------|
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
 | `ConnectionStrings__DefaultConnection` | Your SQL connection string (same as `appsettings` but **on the server only**) |
-| `Jwt__Key` | Long random string, **32+ characters**, not `CHANGE_ME` |
+| `Jwt__Key` | **Optional** if unset or still `CHANGE_ME`: the API generates a secret once and saves it to **`App_Data/jwt-signing.key`** next to the published DLLs (same folder as `web.config`). **Back up that file** with the server; if you delete it, a new key is created and **all existing JWT logins stop working**. You can still set `Jwt__Key` explicitly (env var) to override the file. |
 | `Jwt__Issuer` / `Jwt__Audience` | Match what your Angular `environment.prod.ts` expects if you validate issuer/audience |
 | `Cors__AllowedOrigins__0` | Your public site URL, e.g. `https://booking.yourdomain.com` (ASP.NET Core binds array from numbered env vars) |
-| `Provisioning__MintKey` | Strong secret for provisioning mint if you use that feature |
+| `Provisioning__MintKey` | **Usually not required on a live server.** Only needed to call **`POST` mint provisioning token** when **no Super Admin exists yet** (first bootstrap). After a super admin exists, mint is rejected anyway. If you still need first-time mint over HTTPS, set a strong passphrase via this env var (or `appsettings` — do not commit). |
+
+**Why JWT is not “one new key per use”:** bearer tokens are signed with one secret. If the secret changed every request, **every** token would fail validation immediately. The auto key is **one stable secret**, created once, reused until you rotate it on purpose.
 
 After changing env vars, recycle the app pool.
 

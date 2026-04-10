@@ -17,6 +17,9 @@ frontend/npm-debug.log
 **/appsettings.Development.json
 .env
 
+# Auto-generated JWT signing secret (JwtKeyBootstrap); never commit — back up with server if you rely on file persistence
+backend/OnlineBookingSystem.Api/App_Data/jwt-signing.key
+
 # Local publish output (scripts/create-windows-server-package.ps1)
 artifacts/
 

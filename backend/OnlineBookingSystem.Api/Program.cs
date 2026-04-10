@@ -76,7 +76,8 @@ builder.Services.AddSwaggerGen(options =>
   });
 });
 
-// ✅ JWT
+// ✅ JWT — if Jwt:Key / Jwt__Key is missing or still the placeholder, generate once and persist under App_Data/jwt-signing.key (stable across restarts).
+JwtKeyBootstrap.EnsureSigningKey(builder);
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Configure Jwt:Key in appsettings.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -162,10 +163,10 @@ var app = builder.Build();
 if (app.Environment.IsProduction())
 {
   var prodJwt = app.Configuration["Jwt:Key"] ?? "";
-  if (prodJwt.Contains("CHANGE_ME", StringComparison.OrdinalIgnoreCase) || prodJwt.Trim().Length < 32)
+  if (prodJwt.Trim().Length < 32)
   {
     throw new InvalidOperationException(
-      "Production requires a strong Jwt:Key (32+ characters, not the placeholder). Set the Jwt__Key environment variable or appsettings.Production.json.");
+      "Production requires Jwt:Key (32+ characters). Set Jwt__Key, appsettings, or allow auto-generation (App_Data/jwt-signing.key after first run).");
   }
 }
 
